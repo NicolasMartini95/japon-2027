@@ -386,6 +386,34 @@ details.mas b{color:var(--text)}
 .bdg.sin-reserva{background:transparent;color:var(--text3);border:1.5px solid var(--border2)}
 .hor{font-size:12.5px;color:var(--text2);margin-top:-2px}
 .hor b{color:var(--c)}
+
+/* búsqueda rápida: botón fijo en la barra y panel debajo */
+.buscar-btn{display:inline-flex;align-items:center;gap:6px;margin-left:6px;padding:6px 11px;border-radius:999px;border:1.5px solid var(--accent);background:var(--surface);color:var(--accent);font:inherit;font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap;flex:none}
+.buscar-btn:hover,.buscar-btn[aria-expanded="true"]{background:var(--accent);color:var(--surface)}
+.buscador{position:fixed;top:calc(48px + env(safe-area-inset-top,0px));left:0;right:0;z-index:199;padding-top:10px;padding-bottom:12px;background:var(--nav);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-bottom:1px solid var(--border);box-shadow:0 14px 30px rgba(0,0,0,.18)}
+.buscador[hidden]{display:none}
+.bus-in{max-width:760px;margin:0 auto;display:grid;gap:10px}
+.bus-in input{width:100%;font:inherit;font-size:16px;padding:11px 14px;border-radius:var(--radius);border:2px solid var(--accent);background:var(--surface);color:var(--text);outline:none}
+.bus-res{display:grid;gap:6px;max-height:min(62vh,540px);overflow:auto;overscroll-behavior:contain}
+.bus-grupo{font-size:10px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:var(--text2);margin-top:6px}
+.res{display:flex;gap:10px;align-items:flex-start;padding:9px 10px;border-radius:var(--radius);background:var(--surface);border:1px solid var(--border);text-decoration:none;color:var(--text)}
+a.res:hover,a.res:focus-visible{border-color:var(--accent)}
+.res-dia{flex:none;min-width:60px;text-align:center;font-weight:800;font-size:12px;color:var(--accent);background:rgba(var(--acc-rgb),.1);border-radius:var(--radius-sm);padding:4px 6px;line-height:1.25}
+.res-dia small{display:block;font-weight:500;color:var(--text2);font-size:10.5px}
+.res-txt{min-width:0;display:grid;gap:2px;font-size:13px}
+.res-txt small{color:var(--text2);font-size:11.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.res-txt small.snip{white-space:normal}
+.res-txt mark{background:var(--warn-bg);color:inherit;border-radius:2px;padding:0 1px}
+.chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:4px}
+.chip-dia{font-size:11.5px;font-weight:700;padding:3px 9px;border-radius:999px;background:rgba(var(--acc-rgb),.1);color:var(--accent);text-decoration:none}
+.chip-dia:hover{background:var(--accent);color:var(--surface)}
+.bus-vacio{font-size:13px;color:var(--text2);padding:4px 2px}
+.bus-sug{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:12px;color:var(--text2)}
+.bus-sug button{font:inherit;font-size:12px;padding:3px 10px;border-radius:999px;border:1px solid var(--border2);background:var(--surface);color:var(--text);cursor:pointer}
+.day,.stop{scroll-margin-top:70px}
+@keyframes flash{0%,55%{box-shadow:0 0 0 3px var(--accent)}100%{box-shadow:0 0 0 3px transparent}}
+.flash{animation:flash 2.4s ease-out;border-radius:var(--radius)}
+@media (max-width:520px){.buscar-btn .bl{display:none}.buscar-btn{padding:7px 9px}}
 </style>
 
 <nav class="pad"><div class="in">
@@ -393,7 +421,14 @@ details.mas b{color:var(--text)}
   <div class="links" id="links">
     <a href="#vistazo">Vistazo</a><a href="#grupo">Los Mugiwara</a><a href="#dia-3">Tokio</a><a href="#dia-8">Fuji</a><a href="#dia-9">Kioto</a><a href="#dia-15">Osaka</a><a href="#dia-17">Alpes</a><a href="#guia">Guía</a><a href="#info">Reservas y plata</a>
   </div>
+  <button type="button" class="buscar-btn" id="buscar-btn" aria-expanded="false" aria-controls="buscador" title="Buscar un lugar, templo o ciudad"><svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="4.6" fill="none" stroke="currentColor" stroke-width="2"/><path d="M10.5 10.5 14 14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span class="bl">Buscar</span></button>
 </div></nav>
+<div class="buscador pad" id="buscador" hidden>
+  <div class="bus-in">
+    <input type="search" id="bus-q" placeholder="Un lugar, templo, ciudad o comida…" aria-label="Buscar en la guía" autocomplete="off" enterkeyhint="search">
+    <div class="bus-res" id="bus-res" aria-live="polite"></div>
+  </div>
+</div>
 
 <main class="pad">
   <section class="hero" aria-label="Resumen del viaje">
@@ -804,7 +839,7 @@ function dayHTML(d){
       s.precio?`<p><b>Precio.</b> ${esc(s.precio)}</p>`:'',
       s.ojo?`<p class="mas-ojo"><b>Ojo.</b> ${esc(s.ojo)}</p>`:'',
       s.ficha&&D.fichas&&D.fichas[s.ficha]?`<p><a href="#ficha-${s.ficha}">${esc(D.fichas[s.ficha].titulo)} ↓</a></p>`:''].join('');
-    return `<li class="stop nv-${s.nivel}"><div class="sl"><span class="pin">${k}</span><span class="t">${esc(s.hora)}</span>${s.fin?`<span class="t t-fin">${esc(s.fin)}</span>`:''}</div><div class="sb">
+    return `<li class="stop nv-${s.nivel}" id="dia-${d.n}-p${k}"><div class="sl"><span class="pin">${k}</span><span class="t">${esc(s.hora)}</span>${s.fin?`<span class="t t-fin">${esc(s.fin)}</span>`:''}</div><div class="sb">
       <div class="name"><h4>${esc(s.nombre)}</h4><span class="bdg nivel-${s.nivel}">${NIVEL[s.nivel]||''}</span>${s.reserva?'<span class="bdg reserva">Reserva</span>':s.reserva===false?'<span class="bdg sin-reserva">Sin reserva</span>':''}</div>${s.horario?`<p class="hor"><b>Abre:</b> ${esc(s.horario)}</p>`:''}
       <p>${esc(s.texto)}</p>
       ${ph?`<figure><img src="${ph.src}" alt="${esc(ph.pie)}" loading="lazy"${ph.pos?` style="object-position:${ph.pos}"`:''}><figcaption>${esc(ph.pie)} · <a href="${ph.url}" target="_blank" rel="noopener">${esc(ph.autor)}, ${esc(ph.licencia)}</a></figcaption></figure>`:''}
@@ -849,6 +884,82 @@ if(hs&&document.getElementById(hs)) document.getElementById(hs).scrollIntoView()
 const navA=[...document.querySelectorAll('#links a')];
 const marcar=()=>{const y=scrollY+90;let cur=null;navA.forEach(a=>{const el=document.getElementById(a.getAttribute('href').slice(1));if(el&&el.getBoundingClientRect().top+scrollY<=y)cur=a;});navA.forEach(a=>a.classList.toggle('active',a===cur));};
 addEventListener('scroll',marcar,{passive:true}); marcar();
+
+/* ---------- búsqueda rápida: "¿en qué día está tal lugar?" ---------- */
+{
+  const norm=s=>String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();
+  const ALIAS=[[/kyoto/g,'kioto'],[/tokyo/g,'tokio'],[/kawaguchico/g,'kawaguchiko'],[/osaca/g,'osaka'],[/\bfiloso/g,'filoso']];
+  const prep=s=>{let t=norm(s);ALIAS.forEach(([a,b])=>{t=t.replace(a,b);});return t;};
+  const compact=s=>prep(s).replace(/[^a-z0-9]/g,'');
+  const palabras=s=>prep(s).replace(/[^a-z0-9]+/g,' ').trim();
+  // coincide solo desde el principio de una palabra ("kinkakuji" encuentra "Kinkaku-ji", pero "kioto" no encuentra "TokioTower")
+  const coincide=(w,qw,qc)=>{if((' '+w).includes(' '+qw))return true;const ws=w.split(' ');for(let i=0;i<ws.length;i++)if(ws.slice(i).join('').startsWith(qc))return true;return false;};
+  const fTxt=d=>{const f=fecha(d.fecha);return f.dow+' '+f.dm;};
+  const resaltar=(txt,q)=>{const t=String(txt||''),i=norm(t).indexOf(q);return i<0?esc(t):esc(t.slice(0,i))+'<mark>'+esc(t.slice(i,i+q.length))+'</mark>'+esc(t.slice(i+q.length));};
+  const recorte=(txt,q)=>{const t=String(txt||''),i=norm(t).indexOf(q);if(i<0)return '';const a=Math.max(0,i-45),b=Math.min(t.length,i+q.length+55);return (a?'…':'')+resaltar(t.slice(a,b),q)+(b<t.length?'…':'');};
+  const rango=ns=>{const out=[];ns.forEach(n=>{const u=out[out.length-1];if(u&&n===u[1]+1)u[1]=n;else out.push([n,n]);});return out.map(([a,b])=>a===b?'día '+a:'días '+a+' a '+b).join(', ');};
+
+  // todo lo buscable, armado una sola vez desde los datos
+  const LUG=[...Object.entries(D.bases),...Object.entries(D.lugares)].map(([k,v])=>({k,nombre:v.nombre,w:palabras(v.nombre)}));
+  const TIT=Object.fromEntries(D.dias.map(d=>[d.n,palabras(d.titulo)]));
+  const PAR=[];
+  D.dias.forEach(d=>{let k=0;(d.paradas||[]).forEach(s=>{if(s.tramo)return;k++;
+    PAR.push({d,s,id:`dia-${d.n}-p${k}`,wn:palabras(s.nombre+' '+(s.etiqueta||'')),wt:palabras([s.texto,s.historia,(s.queHacer||[]).join(' ')].join(' '))});});});
+
+  const btn=$('#buscar-btn'), panel=$('#buscador'), inp=$('#bus-q'), out=$('#bus-res');
+  const SUG=['Kioto','Fushimi Inari','torii','ramen','Shibuya','ciervos','geishas'];
+  const sugerir=()=>{out.innerHTML=`<div class="bus-sug">Probá con:${SUG.map(s=>`<button type="button">${esc(s)}</button>`).join('')}</div>`;};
+  const abrir=()=>{panel.hidden=false;btn.setAttribute('aria-expanded','true');if(!inp.value)sugerir();setTimeout(()=>inp.focus(),0);};
+  const cerrar=()=>{panel.hidden=true;btn.setAttribute('aria-expanded','false');};
+  btn.addEventListener('click',()=>panel.hidden?abrir():cerrar());
+
+  const buscar=()=>{
+    const raw=inp.value.trim(); if(raw.length<2){sugerir();return;}
+    const q=prep(raw), qc=compact(raw), qw=palabras(raw); if(!qc){sugerir();return;}
+    let h='';
+
+    // 1) ciudades y zonas: dónde dormimos y qué días vamos
+    const ciu=LUG.filter(l=>coincide(l.w,qw,qc));
+    ciu.forEach(l=>{
+      const noches=D.dias.filter(d=>d.duerme===l.k).map(d=>d.n);
+      const visitas=D.dias.filter(d=>d.duerme!==l.k&&(d.destino===l.k||(d.via||[]).includes(l.k)||(' '+TIT[d.n]+' ').includes(' '+l.w+' '))).map(d=>d.n);
+      const ns=[...new Set([...noches,...visitas])].sort((a,b)=>a-b);
+      const linea=[noches.length?`Dormimos ${noches.length} noche${noches.length>1?'s':''}: ${rango(noches)}`:'',visitas.length?`Vamos: ${rango(visitas)}`:''].filter(Boolean).join(' · ')||'No entra en este plan';
+      h+=`<div class="res"><span class="res-dia">${ns.length?ns.length+(ns.length>1?' días':' día'):'—'}</span><span class="res-txt"><b>${resaltar(l.nombre,q)}</b><small class="snip">${esc(linea)}</small>${ns.length?`<span class="chips">${ns.map(n=>{const d=D.dias.find(x=>x.n===n);return `<a class="chip-dia" href="#dia-${n}" data-go="dia-${n}">Día ${n} · ${fTxt(d)}</a>`;}).join('')}</span>`:''}</span></div>`;
+    });
+    if(ciu.length) h=`<div class="bus-grupo">Ciudades y zonas</div>`+h;
+
+    // 2) lugares por nombre
+    const porNombre=PAR.filter(p=>coincide(p.wn,qw,qc));
+    const item=(p,extra)=>`<a class="res" href="#${p.id}" data-go="${p.id}"><span class="res-dia">Día ${p.d.n}<small>${fTxt(p.d)}</small></span><span class="res-txt"><b>${resaltar(p.s.nombre,q)}</b><small>${esc(p.s.hora)}${p.s.fin?'–'+esc(p.s.fin):''} · ${esc(NIVEL[p.s.nivel]||'')}${p.s.reserva?' · Reserva':''} · ${esc(p.d.titulo)}</small>${extra||''}</span></a>`;
+    if(porNombre.length) h+=`<div class="bus-grupo">Lugares</div>`+porNombre.slice(0,25).map(p=>item(p)).join('');
+
+    // 3) aparece en la descripción (comidas, cosas para hacer, etc.)
+    if(q.length>=3){
+      const enTexto=PAR.filter(p=>!porNombre.includes(p)&&(' '+p.wt).includes(' '+qw)).slice(0,15);
+      if(enTexto.length) h+=`<div class="bus-grupo">${porNombre.length||ciu.length?'También aparece en':'Aparece en'}</div>`+enTexto.map(p=>item(p,`<small class="snip">${recorte([p.s.texto,p.s.historia,(p.s.queHacer||[]).join(' · ')].filter(Boolean).join(' · '),q)}</small>`)).join('');
+      // 4) días cuyo título lo nombra (si no salió como ciudad ni como lugar)
+      if(!ciu.length&&!porNombre.length&&!enTexto.length){
+        const dias=D.dias.filter(d=>(' '+palabras(d.titulo+' '+(d.bajada||'')+' '+(d.relato||''))).includes(' '+qw));
+        if(dias.length) h+=`<div class="bus-grupo">Días</div>`+dias.map(d=>`<a class="res" href="#dia-${d.n}" data-go="dia-${d.n}"><span class="res-dia">Día ${d.n}<small>${fTxt(d)}</small></span><span class="res-txt"><b>${esc(d.titulo)}</b><small class="snip">${recorte(d.bajada+' '+(d.relato||''),q)}</small></span></a>`).join('');
+      }
+    }
+    out.innerHTML=h||`<div class="bus-vacio">“${esc(raw)}” no está en la guía. Probá con otro nombre o con la ciudad.</div>`;
+  };
+  inp.addEventListener('input',buscar);
+
+  out.addEventListener('click',e=>{
+    const sb=e.target.closest('.bus-sug button'); if(sb){inp.value=sb.textContent;buscar();inp.focus();return;}
+    const a=e.target.closest('[data-go]'); if(!a)return;
+    e.preventDefault(); const el=document.getElementById(a.dataset.go); if(!el)return;
+    cerrar(); history.replaceState(null,'','#'+a.dataset.go);
+    el.scrollIntoView({behavior:'smooth',block:'start'});
+    el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash');
+  });
+  inp.addEventListener('keydown',e=>{if(e.key==='Escape')cerrar();if(e.key==='Enter'){const a=out.querySelector('a[data-go]');if(a)a.click();}});
+  document.addEventListener('keydown',e=>{if(e.key==='/'&&panel.hidden&&!/input|textarea/i.test(document.activeElement.tagName)){e.preventDefault();abrir();}});
+  document.addEventListener('click',e=>{if(!panel.hidden&&!panel.contains(e.target)&&!btn.contains(e.target))cerrar();});
+}
 })();
 </script>
 
